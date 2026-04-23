@@ -20,6 +20,7 @@
 #include "RAK12035_SoilMoisture.h"
 #include "MeshCore.h"
 #include <Wire.h>
+#include <ctime>
 
 /*----------------------------------------------------------------------*
  * Constructor.                                                         *
