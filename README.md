@@ -89,6 +89,42 @@ Four of the five envs build against the tree as-is. `Rook_sensor_broadcast` refe
 5. Artifacts land under `.pio/build/<env-name>/`. The rook post-script (`variants/rook/create-uf2-post.py`) also emits a `.uf2` file suitable for drag-and-drop flashing via the Pro Micro nRF52840 USB bootloader.
 6. Flash by uploading the `.uf2` to the USB mass-storage volume the board exposes when you double-tap its reset button. (Or use `pio run -e <env> -t upload` if you have the appropriate upload tooling configured.)
 
+### Building on aarch64 (Raspberry Pi)
+
+PlatformIO's prebuilt `toolchain-gccarmnoneeabi` package is x86_64-only — `pio run` on a Pi fails with `UnknownPackageError: Could not find the package with 'platformio/toolchain-gccarmnoneeabi @ ...' requirements`. Workaround: install Debian's system ARM toolchain and stage a PlatformIO-compatible package manifest that symlinks its binaries.
+
+1. Install the Debian ARM toolchain:
+   ```bash
+   sudo apt install -y gcc-arm-none-eabi
+   ```
+2. Stage a PIO-package dir that PIO will accept via `symlink://`:
+   ```bash
+   STAGING=~/.local/share/pio-aarch64/toolchain-gccarmnoneeabi
+   mkdir -p "$STAGING/bin"
+   for tool in /usr/bin/arm-none-eabi-*; do
+     ln -sf "$tool" "$STAGING/bin/$(basename "$tool")"
+   done
+   cat > "$STAGING/package.json" <<'JSON'
+   { "name": "toolchain-gccarmnoneeabi", "version": "1.70201.0",
+     "description": "system-installed gcc-arm-none-eabi (Debian apt)" }
+   JSON
+   ```
+3. Create `platformio.local.ini` at the repo root pointing each Rook env at the staged package. This file is gitignored upstream:
+   ```ini
+   [env:Rook_repeater]
+   platform_packages =
+     ${nrf52_base.platform_packages}
+     platformio/toolchain-gccarmnoneeabi@symlink:///home/YOUR_USER/.local/share/pio-aarch64/toolchain-gccarmnoneeabi
+   ; (repeat the block for Rook_companion_radio_usb, Rook_companion_radio_ble, Rook_companion_sensor)
+   ```
+4. If a previous `pio run` failed mid-install, PIO may have left a stale cache pointer at `~/.platformio/packages/toolchain-gccarmnoneeabi.pio-link` — delete it before retrying, or PIO will keep chasing the old (broken) symlink target:
+   ```bash
+   rm -f ~/.platformio/packages/toolchain-gccarmnoneeabi.pio-link
+   ```
+5. `pio run -e Rook_repeater` should now proceed.
+
+The Debian toolchain is GCC 14.2.1 (much newer than the GCC 6/7-era `toolchain-gccarmnoneeabi` that PIO's metadata nominally expects). One small patch was needed to compile under modern GCC: `src/helpers/sensors/RAK12035_SoilMoisture.cpp` gained an explicit `#include <ctime>` for `time_t`. The patch is included on this branch.
+
 ### First time? Double-check the LoRa region
 
 `variants/rook/platformio.ini` inherits region-independent defaults from `nrf52_base`. Region frequency/BW overrides can be set per-env in `build_flags` (`-D LORA_FREQ=...`, `-D LORA_BW=...`, `-D LORA_SF=...`) — see `Rook_companion_sensor` for an example of overriding the radio params.
