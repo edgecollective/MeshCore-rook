@@ -63,10 +63,10 @@ The rook variant defines five PlatformIO envs in `variants/rook/platformio.ini`:
 | `Rook_companion_radio_usb`  | Companion radio over USB serial (for use with an external chat app) | `examples/companion_radio/` ✓ |
 | `Rook_companion_radio_ble`  | Companion radio over BLE | `examples/companion_radio/` ✓ |
 | `Rook_repeater`             | Standalone repeater node | `examples/simple_repeater/` ✓ |
-| `Rook_sensor_broadcast`     | Broadcast environment telemetry | `examples/sensor_broadcast/` *(not yet in upstream)* |
-| `Rook_companion_sensor`     | Companion-app-paired sensor | `examples/companion_sensor/` *(not yet in upstream)* |
+| `Rook_sensor_broadcast`     | Broadcast environment telemetry | `examples/sensor_broadcast/main.cpp` *(missing — see note)* |
+| `Rook_companion_sensor`     | Companion-app-paired sensor | `examples/companion_sensor/` ✓ (pulled in from MeshCore-simple-sensor) |
 
-The three ✓ envs build against the current upstream source tree as-is. The two sensor envs reference example folders that live in `edgecollective/MeshCore-simple-sensor` but have not (yet) been upstreamed to `meshcore-dev/MeshCore` — to build them here, either drop those folders into `examples/` or use the companion-sensor repo directly.
+Four of the five envs build against the tree as-is. `Rook_sensor_broadcast` references `examples/sensor_broadcast/main.cpp`, which does not exist in upstream *or* in `edgecollective/MeshCore-simple-sensor` — the variant's `platformio.ini` needs either that file written, a pointer at an alternative main, or the env removed. Likely a leftover from an earlier name of the `simple_sensor` example.
 
 ### Build instructions (PlatformIO)
 
