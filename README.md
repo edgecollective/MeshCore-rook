@@ -48,6 +48,51 @@ For developers;
 
 The Simple Secure Chat example can be interacted with through the Serial Monitor in Visual Studio Code, or with a Serial USB Terminal on Android.
 
+## 🔨 Building the Rook variant (this fork)
+
+This fork of `meshcore-dev/MeshCore` adds a **`rook`** board variant under `variants/rook/`.
+
+Rook is a Pro Micro nRF52840 board paired with an SX1262 LoRa radio, with GPS plus AHTx0 / BME280 / BMP280 environmental sensors wired on the standard I²C pins. See `variants/rook/platformio.ini` for the full pin map and feature flags.
+
+### Available build environments
+
+The rook variant defines five PlatformIO envs in `variants/rook/platformio.ini`:
+
+| Env | Purpose | Depends on |
+|-----|---------|-----------|
+| `Rook_companion_radio_usb`  | Companion radio over USB serial (for use with an external chat app) | `examples/companion_radio/` ✓ |
+| `Rook_companion_radio_ble`  | Companion radio over BLE | `examples/companion_radio/` ✓ |
+| `Rook_repeater`             | Standalone repeater node | `examples/simple_repeater/` ✓ |
+| `Rook_sensor_broadcast`     | Broadcast environment telemetry | `examples/sensor_broadcast/` *(not yet in upstream)* |
+| `Rook_companion_sensor`     | Companion-app-paired sensor | `examples/companion_sensor/` *(not yet in upstream)* |
+
+The three ✓ envs build against the current upstream source tree as-is. The two sensor envs reference example folders that live in `edgecollective/MeshCore-simple-sensor` but have not (yet) been upstreamed to `meshcore-dev/MeshCore` — to build them here, either drop those folders into `examples/` or use the companion-sensor repo directly.
+
+### Build instructions (PlatformIO)
+
+1. Install [PlatformIO](https://docs.platformio.org) — either the VS Code extension or the standalone `pio` CLI.
+2. Clone this fork and enter it:
+   ```bash
+   git clone git@github.com:edgecollective/MeshCore-rook.git
+   cd MeshCore-rook
+   ```
+3. List the envs PlatformIO has picked up (sanity check — the rook envs should be in the output):
+   ```bash
+   pio project config
+   ```
+4. Build one of the working envs (pick whichever fits your use):
+   ```bash
+   pio run -e Rook_companion_radio_usb
+   pio run -e Rook_companion_radio_ble
+   pio run -e Rook_repeater
+   ```
+5. Artifacts land under `.pio/build/<env-name>/`. The rook post-script (`variants/rook/create-uf2-post.py`) also emits a `.uf2` file suitable for drag-and-drop flashing via the Pro Micro nRF52840 USB bootloader.
+6. Flash by uploading the `.uf2` to the USB mass-storage volume the board exposes when you double-tap its reset button. (Or use `pio run -e <env> -t upload` if you have the appropriate upload tooling configured.)
+
+### First time? Double-check the LoRa region
+
+`variants/rook/platformio.ini` inherits region-independent defaults from `nrf52_base`. Region frequency/BW overrides can be set per-env in `build_flags` (`-D LORA_FREQ=...`, `-D LORA_BW=...`, `-D LORA_SF=...`) — see `Rook_companion_sensor` for an example of overriding the radio params.
+
 ## ⚡️ MeshCore Flasher
 
 We have prebuilt firmware ready to flash on supported devices.
